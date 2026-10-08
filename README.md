@@ -5,12 +5,14 @@
 **A Clean, Modern, and Professional AI Document Workspace with Cited Answers.**
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react)](https://react.js.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
-[Live Demo](#) · [Features](#-features) · [Architecture](#-architecture) · [Getting Started](#-getting-started) · [API Integration](#-backend-api-integration)
+[Live Demo](#) · [Features](#-features) · [Architecture](#-architecture) · [Getting Started & Run](#-getting-started--how-to-run) · [API Endpoints](#-api-endpoints)
 
 </div>
 
@@ -30,7 +32,7 @@ It provides a quiet, elegant SaaS experience with dedicated side-by-side documen
 ## ✨ Features
 
 - 📑 **Document Management**:
-  - Drag-and-drop file ingestion supporting **PDF, DOCX, TXT, Markdown, CSV, and XLSX**.
+  - Drag-and-drop file ingestion supporting **PDF, DOCX, TXT, Markdown, and XLSX**.
   - Document status indicator (`Indexed`, `Processing`, `Error`).
   - Document inspector showing file metadata, page counts, and extracted passages.
 
@@ -53,7 +55,7 @@ It provides a quiet, elegant SaaS experience with dedicated side-by-side documen
   - Delete and switch between past chat sessions effortlessly.
 
 - 🎯 **Document Scope Filtering**:
-  - Filter and scope which documents the AI should reference for any specific conversation.
+  - Search across all documents by default, or optionally scope queries to specific files.
 
 - 🔐 **Authentication UI**:
   - Dedicated **Sign In (`/login`)** and **Sign Up (`/register`)** pages with form validation and social login options (Google & GitHub).
@@ -66,13 +68,13 @@ It provides a quiet, elegant SaaS experience with dedicated side-by-side documen
 ## 🏗 Architecture & Project Structure
 
 ```text
-KnowledgeHub/
-├── frontend/
+DocuMind/
+├── frontend/                          # Next.js 16 App Router Frontend
 │   ├── src/
 │   │   ├── app/
 │   │   │   ├── layout.tsx             # Root layout with fonts & metadata
 │   │   │   ├── page.tsx               # New chat / landing workspace
-│   │   │   ├── globals.css            # Tailwind CSS & theme tokens
+│   │   │   ├── globals.css            # Tailwind CSS tokens
 │   │   │   ├── chat/[id]/page.tsx     # Dynamic conversation route (/chat/[id])
 │   │   │   ├── login/page.tsx         # Sign In authentication page
 │   │   │   └── register/page.tsx      # Sign Up authentication page
@@ -89,67 +91,111 @@ KnowledgeHub/
 │   │   └── lib/                       # Utility helpers (cn, formatters, UUID generator)
 │   ├── package.json
 │   └── tsconfig.json
-├── .gitignore
-└── README.md
+│
+└── backend/                           # FastAPI Python RAG Backend
+    ├── app/
+    │   ├── api/
+    │   │   └── routes/
+    │   │       ├── documents.py       # Document upload, listing & deletion routes
+    │   │       ├── conversations.py   # Conversation management & rename routes
+    │   │       ├── chat.py            # RAG query & citation generation routes
+    │   │       └── __init__.py        # API router aggregator (/api/v1)
+    │   ├── core/
+    │   │   ├── config.py              # Pydantic Settings & CORS configuration
+    │   │   └── database.py            # SQLAlchemy engine & session factory
+    │   ├── models/                    # SQLAlchemy database models
+    │   ├── schemas/                   # Pydantic request/response schemas
+    │   ├── services/                  # Business logic services
+    │   └── rag/                       # Core RAG pipeline (Parser, Chunker, Embedder)
+    ├── .env                           # Environment variables
+    ├── .gitignore
+    ├── requirements.txt               # Python package dependencies
+    ├── main.py                        # FastAPI application instance
+    └── run.py                         # Fast server starter script
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started & How to Run
 
 ### Prerequisites
 
 - **Node.js**: v18.17+ or v20+ / v22+
-- **npm**, **pnpm**, or **yarn**
-
-### Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/<your-username>/KnowledgeHub.git
-   cd KnowledgeHub
-   ```
-
-2. Navigate to the `frontend` directory and install dependencies:
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+- **Python**: v3.10+ / v3.12+
+- **Git**
 
 ---
 
-## 🔌 Backend API Integration
+### 1️⃣ Run Backend (FastAPI)
 
-The frontend includes a simulated intelligent RAG engine in `src/services/ragService.ts` for immediate prototyping. When your backend (e.g., **FastAPI**, **LangChain**, **LlamaIndex**) is ready, you can connect it via standard REST / SSE endpoints:
+Open a terminal (PowerShell / Command Prompt) and run:
 
-```typescript
-// Example endpoint contract
-POST /api/v1/chat
-{
-  "conversation_id": "6ac69d62-df44-83ec-9aee-03098d423443",
-  "query": "What was the revenue in Q3 2025?",
-  "document_ids": ["doc-1", "doc-2"],
-  "stream": true
-}
+```powershell
+# 1. Navigate to backend directory
+cd D:\DocuMind\backend
+
+# 2. Create and activate Python virtual environment
+python -m venv .venv
+.venv\Scripts\activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Start the Backend server
+python run.py
 ```
+
+- **Backend API Root**: [http://localhost:8000/](http://localhost:8000/)
+- **Interactive Swagger Documentation**: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+### 2️⃣ Run Frontend (Next.js)
+
+Open a second terminal window and run:
+
+```powershell
+# 1. Navigate to frontend directory
+cd D:\DocuMind\frontend
+
+# 2. Install dependencies (if not already installed)
+npm install
+
+# 3. Start the Next.js development server
+npm run dev
+```
+
+- **Frontend App**: [http://localhost:3000](http://localhost:3000)
+- **Sign In Page**: [http://localhost:3000/login](http://localhost:3000/login)
+- **Sign Up Page**: [http://localhost:3000/register](http://localhost:3000/register)
+
+---
+
+## 🔌 API Endpoints
+
+All backend endpoints are prefixed with `/api/v1`:
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/v1/documents/` | List all uploaded documents |
+| `POST` | `/api/v1/documents/upload` | Upload & ingest document (PDF, DOCX, TXT, XLSX) |
+| `GET` | `/api/v1/documents/{id}` | Get document metadata & status |
+| `DELETE` | `/api/v1/documents/{id}` | Delete document and its vector chunks |
+| `GET` | `/api/v1/conversations/` | List recent conversation sessions |
+| `POST` | `/api/v1/conversations/` | Create a new conversation |
+| `PATCH` | `/api/v1/conversations/{id}` | Rename conversation title |
+| `DELETE` | `/api/v1/conversations/{id}` | Delete conversation |
+| `POST` | `/api/v1/chat/` | Ask question & receive RAG response with citations |
 
 ---
 
 ## 🛠 Tech Stack
 
-- **Framework**: [Next.js 16 (App Router)](https://nextjs.org/)
-- **UI Library**: [React 19](https://react.dev/)
-- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
-- **Animations**: [Framer Motion](https://www.framer.com/motion/)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **Markdown**: [React Markdown](https://github.com/remarkjs/react-markdown) + [Remark GFM](https://github.com/remarkjs/remark-gfm)
+- **Frontend**: [Next.js 16](https://nextjs.org/), [React 19](https://react.dev/), [Tailwind CSS v4](https://tailwindcss.com/), [Framer Motion](https://www.framer.com/motion/), [Lucide Icons](https://lucide.dev/)
+- **Backend**: [FastAPI](https://fastapi.tiangolo.com/), [Uvicorn](https://www.uvicorn.org/), [Pydantic v2](https://docs.pydantic.dev/)
+- **Database & Vector Search**: [PostgreSQL](https://www.postgresql.org/) + [pgvector](https://github.com/pgvector/pgvector), [SQLAlchemy 2.0](https://www.sqlalchemy.org/)
+- **Document Parsers**: `pypdf`, `python-docx`, `openpyxl`, `pandas`
+- **AI & Embeddings**: [OpenAI Python SDK](https://github.com/openai/openai-python) (`text-embedding-3-small`, `gpt-4o-mini`)
 
 ---
 
