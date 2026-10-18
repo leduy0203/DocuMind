@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = "text-embedding-3-small"
     LLM_MODEL: str = "gpt-4o-mini"
 
+    # JWT Authentication
+    JWT_SECRET: str = "documind-super-secret-jwt-key-2026-production-ready"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @property
