@@ -12,7 +12,7 @@
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
-[Live Demo](#) · [Features](#-features) · [Architecture](#-architecture) · [Getting Started & Run](#-getting-started--how-to-run) · [API Endpoints](#-api-endpoints)
+[Live Demo](#) · [Features](#-features) · [Architecture](#-architecture) · [RAG Specification Guide](RAG_PIPELINE_GUIDE.md) · [Getting Started & Run](#-getting-started--how-to-run) · [API Endpoints](#-api-endpoints)
 
 </div>
 
@@ -62,6 +62,20 @@ It provides a quiet, elegant SaaS experience with dedicated side-by-side documen
 
 - 🌙 **Dark & Light Mode**:
   - Built-in theme toggle with accessible neutral color palettes.
+
+---
+
+## 📘 Production RAG Specification & Architecture
+
+For a deep-dive technical blueprint, multi-tenancy rules, and interview preparation, see:
+👉 **[Full RAG Pipeline & Architecture Guide (RAG_PIPELINE_GUIDE.md)](RAG_PIPELINE_GUIDE.md)**
+
+Key engineering highlights covered in the specification:
+1. **Multi-tenancy Isolation**: Every document and chunk is indexed with `user_id` to prevent IDOR vulnerabilities.
+2. **Atomic Ingestion State Machine**: `UPLOADED` $\rightarrow$ `PROCESSING` $\rightarrow$ `INDEXED` (with rollback to `FAILED` and error logging).
+3. **Conversational Query Condensation**: Resolves follow-up ambiguous queries (e.g. *"How much did it increase?"*) before embedding search.
+4. **Backend-Enforced Citation Verification**: LLM-generated sources are validated against actual retrieved database chunks before sending to the client.
+5. **pgvector Optimization**: Accurate cosine similarity calculation $(1 - \text{distance})$ with HNSW indexing.
 
 ---
 
