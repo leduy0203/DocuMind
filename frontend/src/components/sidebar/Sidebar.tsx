@@ -17,8 +17,11 @@ import {
   User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { authService, User as AuthUser } from "@/services/authService";
+import { useTheme } from "next-themes";
 
 interface SidebarProps {
+
   isOpen: boolean;
   onClose: () => void;
   sessions: ChatSession[];
@@ -45,18 +48,28 @@ export function Sidebar({
   onOpenUpload,
   onSelectDocumentDetail,
 }: SidebarProps) {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+    setCurrentUser(authService.getCurrentUser());
+  }, []);
 
   const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    if (!isDarkMode) {
+    const nextTheme = resolvedTheme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    if (nextTheme === "dark") {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
   };
+
+
 
   const startRename = (session: ChatSession, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -271,21 +284,20 @@ export function Sidebar({
 
         {/* Footer: User Profile + Theme toggle */}
         <div className="p-3 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
-          <Link
-            href="/login"
-            className="flex items-center gap-2 min-w-0 flex-1 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
-            title="Account / Sign in"
+          <div
+            className="flex items-center gap-2 min-w-0 flex-1 text-left"
+            title="Account profile"
           >
-            <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-[10px] font-bold shrink-0">
-              U
+            <div className="w-6 h-6 rounded-full bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 flex items-center justify-center text-[10px] font-bold shrink-0">
+              {currentUser?.full_name ? currentUser.full_name.charAt(0).toUpperCase() : "U"}
             </div>
             <div className="min-w-0 flex-1 truncate text-left">
               <p className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate leading-tight">
-                Duy Nguyen
+                {currentUser?.full_name || "User"}
               </p>
-              <p className="text-[10px] text-slate-400 truncate">duy@documind.io</p>
+              <p className="text-[10px] text-slate-400 truncate">{currentUser?.email || "user@documind.io"}</p>
             </div>
-          </Link>
+          </div>
 
           <div className="flex items-center gap-1 shrink-0">
             <button
@@ -293,17 +305,23 @@ export function Sidebar({
               className="p-1.5 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
               title="Toggle Theme"
             >
-              {isDarkMode ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+              {mounted && resolvedTheme === "dark" ? (
+                <Sun className="w-3.5 h-3.5 text-amber-400" />
+              ) : (
+                <Moon className="w-3.5 h-3.5" />
+              )}
             </button>
-            <Link
-              href="/login"
-              className="p-1.5 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+
+            <button
+              onClick={() => authService.logout()}
+              className="p-1.5 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
               title="Sign out"
             >
               <LogOut className="w-3.5 h-3.5" />
-            </Link>
+            </button>
           </div>
         </div>
+
       </aside>
     </>
   );

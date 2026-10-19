@@ -24,8 +24,10 @@ import { DocumentScopeModal } from "@/components/documents/DocumentScopeModal";
 import { DocumentUploadModal } from "@/components/documents/DocumentUploadModal";
 import { generateUUID } from "@/lib/utils";
 import { FileText } from "lucide-react";
+import { conversationService } from "@/services/conversationService";
 
 interface ChatWorkspaceProps {
+
   conversationId?: string;
 }
 
@@ -49,20 +51,37 @@ export function ChatWorkspace({ conversationId }: ChatWorkspaceProps) {
   const [sessions, setSessions] = useState<ChatSession[]>(INITIAL_CHAT_SESSIONS);
   const [currentSessionId, setCurrentSessionId] = useState<string>(conversationId || "new");
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
 
-  // Hydrate from localStorage on client side
+  // Auth Guard & Fetch real conversations from Backend
   useEffect(() => {
+    const token = localStorage.getItem("documind_token");
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+    setIsAuthChecking(false);
+
+    // Fetch conversations from Backend API
+    conversationService
+      .getConversations()
+      .then((data) => {
+        setSessions(data);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch conversations from API:", err);
+      });
+
     try {
       const savedDocs = localStorage.getItem(DOCUMENTS_STORAGE_KEY);
       if (savedDocs) setDocuments(JSON.parse(savedDocs));
-
-      const savedSessions = localStorage.getItem(SESSIONS_STORAGE_KEY);
-      if (savedSessions) setSessions(JSON.parse(savedSessions));
     } catch (e) {
       console.error(e);
     }
     setIsHydrated(true);
-  }, []);
+  }, [router]);
+
+
 
   // Save to localStorage
   useEffect(() => {
@@ -85,14 +104,30 @@ export function ChatWorkspace({ conversationId }: ChatWorkspaceProps) {
     }
   }, [documents, isHydrated]);
 
-  // Sync conversationId prop from URL
+  // Sync conversationId prop from URL & load messages from API
   useEffect(() => {
-    if (conversationId) {
+    if (conversationId && conversationId !== "new") {
       setCurrentSessionId(conversationId);
+      // Fetch details and messages for this conversation
+      conversationService
+        .getConversationById(conversationId)
+        .then((fullConv) => {
+          setSessions((prev) => {
+            const exists = prev.some((s) => s.id === fullConv.id);
+            if (exists) {
+              return prev.map((s) => (s.id === fullConv.id ? fullConv : s));
+            }
+            return [fullConv, ...prev];
+          });
+        })
+        .catch((err) => {
+          console.error("Failed to fetch conversation details:", err);
+        });
     } else {
       setCurrentSessionId("new");
     }
   }, [conversationId]);
+
 
   // UI State
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -146,14 +181,27 @@ export function ChatWorkspace({ conversationId }: ChatWorkspaceProps) {
     let isBrandNewSession = false;
     const nowTimestamp = new Date().toISOString();
 
-    // If starting on a new chat session, generate UUID and update URL
+    // If starting on a new chat session, generate session and update URL
     if (activeId === "new" || !sessions.some((s) => s.id === activeId)) {
       isBrandNewSession = true;
-      activeId = generateUUID();
+      const initialTitle = content.trim().length > 35 ? `${content.trim().slice(0, 35)}...` : content.trim();
+      
+      try {
+        const createdSession = await conversationService.createConversation({
+          title: initialTitle,
+          document_ids: currentSession.selectedDocIds,
+        });
+        activeId = createdSession.id;
+      } catch (err) {
+        console.error("Failed to create conversation on backend, using local UUID:", err);
+        activeId = generateUUID();
+      }
+
       setCurrentSessionId(activeId);
       // Smoothly update browser URL without triggering full page reload
       window.history.pushState({}, "", `/chat/${activeId}`);
     }
+
 
     const userMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
@@ -279,16 +327,24 @@ export function ChatWorkspace({ conversationId }: ChatWorkspaceProps) {
     router.push(`/chat/${id}`);
   };
 
-  const handleDeleteSession = (id: string) => {
+  const handleDeleteSession = async (id: string) => {
+    // Optimistic UI update
     const remaining = sessions.filter((s) => s.id !== id);
     setSessions(remaining);
     if (currentSessionId === id) {
       router.push("/");
     }
+
+    try {
+      await conversationService.deleteConversation(id);
+    } catch (err) {
+      console.error("Failed to delete conversation from backend:", err);
+    }
   };
 
-  const handleRenameSession = (id: string, newTitle: string) => {
+  const handleRenameSession = async (id: string, newTitle: string) => {
     const nowTimestamp = new Date().toISOString();
+    // Optimistic UI update
     setSessions((prev) =>
       prev.map((s) =>
         s.id === id
@@ -296,7 +352,14 @@ export function ChatWorkspace({ conversationId }: ChatWorkspaceProps) {
           : s
       )
     );
+
+    try {
+      await conversationService.renameConversation(id, newTitle);
+    } catch (err) {
+      console.error("Failed to rename conversation on backend:", err);
+    }
   };
+
 
   // Toggle doc scope
   const handleToggleDoc = (docId: string) => {
@@ -350,8 +413,17 @@ export function ChatWorkspace({ conversationId }: ChatWorkspaceProps) {
     currentSession.selectedDocIds.includes(d.id)
   );
 
+  if (isAuthChecking) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-white dark:bg-slate-950">
+        <div className="w-6 h-6 border-2 border-slate-300 dark:border-slate-700 border-t-slate-900 dark:border-t-slate-100 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-white dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 antialiased">
+
       {/* 1. Sidebar */}
       <Sidebar
         isOpen={isSidebarOpen}

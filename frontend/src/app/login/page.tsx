@@ -3,10 +3,13 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Lock, Mail, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Lock, Mail, Eye, EyeOff, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { authService } from "@/services/authService";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export default function LoginPage() {
+
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,37 +18,66 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (authService.isAuthenticated()) {
+      router.replace("/");
+    }
+  }, [router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!email || !password) {
+    if (!email.trim() || !password) {
       setError("Please fill in all fields.");
       return;
     }
 
     setIsLoading(true);
-    // Simulate login delay
-    await new Promise((r) => setTimeout(r, 600));
 
-    // Redirect to main workspace
-    router.push("/");
+    try {
+      await authService.login({
+        email: email.trim(),
+        password,
+      });
+      router.push("/");
+    } catch (err: any) {
+      setError(err.message || "Failed to sign in. Please check your credentials.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 font-sans text-slate-900 dark:text-slate-100">
-      <div className="w-full max-w-sm space-y-6">
+    <div className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 font-sans text-slate-900 dark:text-slate-100 relative overflow-hidden bg-slate-50 dark:bg-slate-950">
+      {/* Background Vibrant Glow Orbs & Subtle Grid Pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f015_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f015_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
+      
+      {/* Colorful Ambient Blurs */}
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-indigo-500/20 dark:bg-indigo-600/15 rounded-full blur-3xl pointer-events-none animate-pulse" />
+      <div className="absolute top-1/2 -right-32 w-96 h-96 bg-emerald-500/15 dark:bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 left-1/3 w-80 h-80 bg-violet-500/15 dark:bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Floating Theme Toggle Top Right */}
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
+
+      {/* Main Centered Card Container */}
+
+      <div className="w-full max-w-[400px] space-y-6 relative z-10">
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <Link href="/" className="inline-flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 flex items-center justify-center font-bold text-sm shadow-xs transition-transform group-hover:scale-105">
+            <div className="w-9 h-9 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 flex items-center justify-center font-bold text-sm shadow-sm transition-transform group-hover:scale-105">
               D
             </div>
-            <span className="font-semibold text-base tracking-tight text-slate-900 dark:text-slate-100">
+            <span className="font-semibold text-lg tracking-tight text-slate-900 dark:text-slate-100">
               DocuMind
             </span>
           </Link>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             Sign in to your account
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -53,35 +85,37 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Card Box */}
-        <div className="p-6 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-4">
+        {/* Floating Glass Card */}
+        <div className="p-6 sm:p-7 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md shadow-xl shadow-slate-200/50 dark:shadow-none space-y-4">
           {error && (
-            <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-800/40 text-rose-600 dark:text-rose-400 text-xs">
-              {error}
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200/70 dark:border-rose-800/50 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2 animate-in fade-in duration-200">
+              <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
+          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
             {/* Email Field */}
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <label className="font-medium text-slate-700 dark:text-slate-300">
                 Email address
               </label>
-              <div className="relative">
-                <Mail className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <div className="relative group">
+                <Mail className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-700 dark:group-focus-within:text-slate-200 transition-colors" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
                   required
-                  className="w-full pl-8 pr-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
+                  disabled={isLoading}
+                  className="w-full pl-8 pr-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400 transition-all disabled:opacity-60"
                 />
               </div>
             </div>
 
             {/* Password Field */}
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="font-medium text-slate-700 dark:text-slate-300">
                   Password
@@ -90,27 +124,28 @@ export default function LoginPage() {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    alert("Password reset instructions sent to your email.");
+                    alert("Password reset instructions will be sent to your email.");
                   }}
-                  className="text-[11px] text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:underline"
+                  className="text-[11px] text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:underline transition-colors"
                 >
                   Forgot password?
                 </a>
               </div>
-              <div className="relative">
-                <Lock className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <div className="relative group">
+                <Lock className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-700 dark:group-focus-within:text-slate-200 transition-colors" />
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-8 pr-8 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
+                  disabled={isLoading}
+                  className="w-full pl-8 pr-8 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400 transition-all disabled:opacity-60"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
@@ -118,8 +153,8 @@ export default function LoginPage() {
             </div>
 
             {/* Remember Me */}
-            <div className="flex items-center justify-between pt-1">
-              <label className="flex items-center gap-2 cursor-pointer text-slate-600 dark:text-slate-400 text-[11px]">
+            <div className="flex items-center justify-between pt-0.5">
+              <label className="flex items-center gap-2 cursor-pointer text-slate-600 dark:text-slate-400 text-[11px] select-none">
                 <input
                   type="checkbox"
                   checked={rememberMe}
@@ -136,7 +171,7 @@ export default function LoginPage() {
               variant="primary"
               size="md"
               isLoading={isLoading}
-              className="w-full text-xs font-semibold py-2.5 mt-2"
+              className="w-full text-xs font-semibold py-2.5 mt-2 transition-all shadow-sm"
             >
               <span>Sign in</span>
               <ArrowRight className="w-3.5 h-3.5 ml-1" />
@@ -149,7 +184,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-slate-200 dark:border-slate-800" />
             </div>
             <div className="relative flex justify-center text-[10px] uppercase">
-              <span className="bg-white dark:bg-slate-900 px-2 text-slate-400">
+              <span className="bg-white/95 dark:bg-slate-900 px-2 text-slate-400">
                 Or continue with
               </span>
             </div>

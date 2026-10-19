@@ -29,3 +29,9 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+# Schema for Registration Success Response
+class RegisterSuccessResponse(BaseModel):
+    message: str = "Account created successfully"
+    email: EmailStr
+
